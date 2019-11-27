@@ -13,7 +13,7 @@ use Cron\CronBundle\Entity\CronJob;
 use Cron\CronBundle\Entity\CronJobRepository;
 use Cron\CronBundle\Entity\CronReport;
 use Cron\Report\JobReport;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Bundle\DoctrineBundle\Registry;
 
 /**
  * @author Dries De Peuter <dries@nousefreak.be>
@@ -21,14 +21,14 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
 class Manager
 {
     /**
-     * @var RegistryInterface
+     * @var Registry
      */
     protected $manager;
 
     /**
-     * @param RegistryInterface $registry
+     * @param Registry $registry
      */
-    function __construct(RegistryInterface $registry)
+    function __construct(Registry $registry)
     {
         $this->manager = $registry->getManagerForClass(CronJob::class);
     }

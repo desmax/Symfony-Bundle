@@ -11,6 +11,7 @@ namespace Cron\CronBundle\Command;
 
 use Cron\CronBundle\Cron\CronCommand;
 use Cron\CronBundle\Entity\CronJob;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Input\InputInterface;
