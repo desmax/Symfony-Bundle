@@ -13,22 +13,16 @@ use Cron\CronBundle\Entity\CronJob;
 use Cron\CronBundle\Entity\CronJobRepository;
 use Cron\CronBundle\Entity\CronReport;
 use Cron\Report\JobReport;
-use Doctrine\Bundle\DoctrineBundle\Registry;
+use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @author Dries De Peuter <dries@nousefreak.be>
  */
 class Manager
 {
-    /**
-     * @var Registry
-     */
     protected $manager;
 
-    /**
-     * @param Registry $registry
-     */
-    function __construct(Registry $registry)
+    public function __construct(ManagerRegistry $registry)
     {
         $this->manager = $registry->getManagerForClass(CronJob::class);
     }
@@ -36,7 +30,7 @@ class Manager
     /**
      * @return CronJobRepository
      */
-    protected function getJobRepo()
+    protected function getJobRepo(): CronJobRepository
     {
         return $this->manager->getRepository(CronJob::class);
     }

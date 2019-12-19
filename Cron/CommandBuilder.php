@@ -16,20 +16,10 @@ use Symfony\Component\Process\PhpExecutableFinder;
  */
 class CommandBuilder
 {
-    /**
-     * @var string
-     */
     private $environment;
-
-    /**
-     * @var string
-     */
     private $phpExecutable;
 
-    /**
-     * @param string $environment
-     */
-    public function __construct($environment)
+    public function __construct(string $environment)
     {
         $this->environment = $environment;
 
@@ -37,12 +27,7 @@ class CommandBuilder
         $this->phpExecutable = $finder->find();
     }
 
-    /**
-     * @param string $command
-     *
-     * @return string
-     */
-    public function build($command)
+    public function build(string $command): string
     {
         return sprintf('%s %s %s --env=%s', $this->phpExecutable, $_SERVER['SCRIPT_NAME'], $command, $this->environment);
     }

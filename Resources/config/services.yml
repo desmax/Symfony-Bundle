@@ -6,24 +6,19 @@ parameters:
     cron.validator.class:       Cron\Validator\CrontabValidator
 
 services:
-    Cron\CronBundle\Command\:
-        resource: '../../Command'
-        arguments: [ "@service_container"]
+    Cron\CronBundle\Command\CronRunCommand:
+        arguments: [ "@cron.executor", "@cron.resolver", "@cron.manager", "%kernel.project_dir%"]
         tags: [console.command]
     cron.resolver:
         class: "%cron.resolver.class%"
-        arguments: ["@cron.manager", "@cron.command_builder", "%kernel.root_dir%"]
-        public: true
+        arguments: ["@cron.manager", "@cron.command_builder", "%kernel.project_dir%"]
     cron.manager:
         class: "%cron.manager.class%"
         arguments: ["@doctrine"]
-        public: true
     cron.executor:
         class: "%cron.executor.class%"
-        public: true
     cron.command_builder:
         class: "%cron.command_builder.class%"
         arguments: ["%kernel.environment%"]
     cron.validator:
         class: "%cron.validator.class%"
-        public: true

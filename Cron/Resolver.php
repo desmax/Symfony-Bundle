@@ -14,34 +14,22 @@ use Cron\Job\JobInterface;
 use Cron\Job\ShellJob;
 use Cron\Resolver\ResolverInterface;
 use Cron\Schedule\CrontabSchedule;
-use Symfony\Component\Process\PhpExecutableFinder;
 
 /**
  * @author Dries De Peuter <dries@nousefreak.be>
  */
 class Resolver implements ResolverInterface
 {
-    /**
-     * @var Manager
-     */
     private $manager;
-
-    /**
-     * @var CommandBuilder
-     */
     private $commandBuilder;
-
-    /**
-     * @var string
-     */
-    private $rootDir;
+    private $projectDir;
 
 
-    public function __construct(Manager $manager, CommandBuilder $commandBuilder, $rootDir)
+    public function __construct(Manager $manager, CommandBuilder $commandBuilder, string $projectDir)
     {
         $this->manager = $manager;
         $this->commandBuilder = $commandBuilder;
-        $this->rootDir = dirname($rootDir);
+        $this->projectDir = $projectDir;
 
     }
 
@@ -54,7 +42,7 @@ class Resolver implements ResolverInterface
     {
         $jobs = $this->manager->listEnabledJobs();
 
-        return array_map(array($this, 'createJob'), $jobs);
+        return array_map([$this, 'createJob'], $jobs);
     }
 
     /**
@@ -66,7 +54,7 @@ class Resolver implements ResolverInterface
     protected function createJob(CronJob $dbJob)
     {
         $job = new ShellJob();
-        $job->setCommand($this->commandBuilder->build($dbJob->getCommand()), $this->rootDir);
+        $job->setCommand($this->commandBuilder->build($dbJob->getCommand()), $this->projectDir);
         $job->setSchedule(new CrontabSchedule($dbJob->getSchedule()));
         $job->raw = $dbJob;
 

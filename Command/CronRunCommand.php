@@ -10,11 +10,13 @@
 namespace Cron\CronBundle\Command;
 
 use Cron\Cron;
-use Cron\CronBundle\Cron\CronCommand;
-use Cron\CronBundle\Entity\CronJob;
+use Cron\CronBundle\Cron\Manager;
+use Cron\CronBundle\Cron\Resolver;
+use Cron\Executor\ExecutorInterface;
 use Cron\Job\ShellJob;
 use Cron\Resolver\ArrayResolver;
 use Cron\Schedule\CrontabSchedule;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -24,8 +26,23 @@ use Symfony\Component\Process\PhpExecutableFinder;
 /**
  * @author Dries De Peuter <dries@nousefreak.be>
  */
-class CronRunCommand extends CronCommand
+class CronRunCommand extends Command
 {
+    private $executor;
+    private $resolver;
+    private $manager;
+    private $projectDir;
+
+    public function __construct(ExecutorInterface $executor, Resolver $resolver, Manager $manager, string $projectDir)
+    {
+        $this->executor = $executor;
+        $this->resolver = $resolver;
+        $this->manager = $manager;
+        $this->projectDir = $projectDir;
+
+        parent::__construct();
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -44,11 +61,11 @@ class CronRunCommand extends CronCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $cron = new Cron();
-        $cron->setExecutor($this->getContainer()->get('cron.executor'));
+        $cron->setExecutor($this->executor);
         if ($input->getArgument('job')) {
             $resolver = $this->getJobResolver($input->getArgument('job'), $input->getParameterOption('--force') !== false, $input->getParameterOption('--schedule_now') !== false);
         } else {
-            $resolver = $this->getContainer()->get('cron.resolver');
+            $resolver = $this->resolver;
         }
         $cron->setResolver($resolver);
 
@@ -59,54 +76,34 @@ class CronRunCommand extends CronCommand
 
         $output->writeln('time: ' . (microtime(true) - $time));
 
-        $manager = $this->getContainer()->get('cron.manager');
-        $manager->saveReports($dbReport->getReports());
+        $this->manager->saveReports($dbReport->getReports());
     }
 
-    /**
-     * @param  string                    $jobName
-     * @param  bool                      $force
-     * @return ArrayResolver
-     * @throws \InvalidArgumentException
-     */
-    protected function getJobResolver($jobName, $force = false, $schedule_now = false)
+    protected function getJobResolver(string $jobName, bool $force = false, $schedule_now = false): ArrayResolver
     {
-        $dbJob = $this->queryJob($jobName);
+        $dbJob = $this->manager->getJobByName($jobName);
 
         if (!$dbJob) {
             throw new \InvalidArgumentException('Unknown job.');
         }
 
-        if (!$dbJob->getEnabled() && !$force) {
+        if (!$force && !$dbJob->getEnabled()) {
             throw new \InvalidArgumentException('Job is disabled, run with --force to force schedule it.');
         }
 
         $finder = new PhpExecutableFinder();
         $phpExecutable = $finder->find();
-        $rootDir = dirname($this->getContainer()->getParameter('kernel.root_dir'));
         $pattern = !$schedule_now ? $dbJob->getSchedule() : '* * * * *';
 
         $resolver = new ArrayResolver();
 
         $job = new ShellJob();
-        $job->setCommand(escapeshellarg($phpExecutable) . ' ' . $rootDir . '/bin/console ' . $dbJob->getCommand());
+        $job->setCommand(escapeshellarg($phpExecutable) . ' ' . $this->projectDir . '/bin/console ' . $dbJob->getCommand());
         $job->setSchedule(new CrontabSchedule($pattern));
         $job->raw = $dbJob;
 
         $resolver->addJob($job);
 
         return $resolver;
-    }
-
-    /**
-     * @param  string  $jobName
-     * @return CronJob
-     */
-    protected function queryJob($jobName)
-    {
-        $job = $this->getContainer()->get('cron.manager')
-            ->getJobByName($jobName);
-
-        return $job;
     }
 }
