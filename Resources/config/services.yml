@@ -7,7 +7,7 @@ parameters:
 
 services:
     Cron\CronBundle\Command\CronRunCommand:
-        arguments: [ "@cron.executor", "@cron.resolver", "@cron.manager", "%kernel.project_dir%"]
+        arguments: [ "@cron.executor", "@cron.resolver", "@cron.manager"]
         tags: [console.command]
     cron.resolver:
         class: "%cron.resolver.class%"
